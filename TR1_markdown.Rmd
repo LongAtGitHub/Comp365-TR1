@@ -1,0 +1,127 @@
+---
+title: "| Computational Linear Algebra    \n| Technical Report 1: Finite Difference Derivatives \n"
+output:
+  bookdown::html_document2:
+    number_sections: false
+    split_by: none
+    toc: yes
+    toc_float: yes
+    toc_depth: 2
+    theme: cerulean
+---
+
+\
+
+## The Scenario
+
+You have graduated from Macalester and have been hired by the scientific consulting firm CLA365 Inc, specializing in satisfying all of your scientific computation needs. You will form teams of 3ish for this project.
+
+The VP of Computation has requested that your results be described in a technical report that is not more than 5 pages long (anything beyond 5 pages will be rejected). The 5 pages includes all graphics (like all of us, the VP for Computation enjoys looking at pictures), each of which should have a caption and figure number. You may put `R` code in an Appendix that goes beyond the 5 pages. Your report should be written in LaTeX.
+
+You are allowed to use other sources outside of class materials, but are not expected to do so.
+
+\
+
+## Finite Difference Derivatives
+
+As your first job, the VP for Computation wants you to develop software to compute numerical derivatives in `R`.
+
+```{r}
+library(ggplot2)
+```
+
+#### Specific Design Requests
+
+1.  Write a simple `R` function called `D`, which approximates the derivative of a continuous function $f: \mathbb{R} \rightarrow \mathbb{R}$. The function should do the following:\
+
+-   the input should be a function $f:\mathbb{R} \rightarrow \mathbb{R}$ (you can assume it to be a continuous function)\
+-   the output $D(f)$ should be a function that is the derivative of $f$. That is, inside of `D` you should create a new function, which gives the derivative, and `D` should return that new function.\
+-   your function `D` will require the parameter `delta`. It should have a default value of `delta` defined in it, but the user should be able to specify their own `delta` by saying `D(f,delta=.001)`.
+
+```{r}
+# Create D
+D <- function(f, delta = 0.001) {
+  derivative <- function(x) {
+    (f(x + delta) - f(x)) / delta
+  }
+  return(derivative)
+}
+
+```
+
+```{r,eval=FALSE}
+f <- function(x) {x*exp(-x^2)}
+df <- D(f)
+x <- seq(-1,3,length=1000)
+qplot(x,f(x),geom="line") +
+  geom_hline(yintercept=0,color="red")+
+  ggtitle("f(x)")
+qplot(x,df(x),geom="line") +
+  geom_hline(yintercept=0,color="red")+
+  ggtitle("dy/dx = f'(x)")
+```
+
+2.  Write a function `Newton(f,x)`, which implements Newton's method on the function $f$ with an initial value $x$ by calling your `D` function instead of needing to know the derivative of $f$. You can assume that a technical report has already been written about Newton's method, so you don't need to describe the method. What you are showing here is that in this improved version of Newton's method, we do not need to know the derivative; rather it is computed using your `D`. You will need to include stopping criteria as well. I suggest to stop when either
+
+-   a maximum number of iterations is reached (which is always a good idea to have in iterative algorithms), or
+-   when the estimate of the root does not change very much from one iteration to the next.
+
+```{r}
+Newton <- function(f, x, max_iter = 100, tol = 1e-6) {
+  for (iter in 1:max_iter) {
+    f_prime <- D(f)  # Approximate the derivative of f using D
+    dx <- f(x) / f_prime(x)  # Compute the change in x using Newton's method
+    x_new <- x - dx  # Update the value of x
+    if (abs(dx) < tol ) {
+      cat("Convergence achieved after", iter, "iterations\n")
+      return(x_new)  # Return the root estimate
+    }
+    x <- x_new  # Update x for the next iteration
+  }
+  cat("Maximum iterations reached without convergence\n")
+  return(NULL)  # Return NULL if no convergence
+}
+
+
+```
+
+3.  The VP for Computation wants to know which values of `delta` are best for these computations. Can we just set `delta` to 0? As `delta` gets closer and closer to 0 do our computations continue to get better and better or is there a limit to the accuracy. If so, what exactly is the limit and why? You can approach this as follows. Pick a function for which you know the value of the derivative exactly (one possibility is $e^x$ at $x = 0$); compute this derivative with your value of `D` for smaller and smaller values of delta; make a plot. A log plot or a log-log plot can be especially helpful here.
+
+    No if delta =0, it will not work as there is no progress in getting the next root iterative.
+
+    Closer and closer to 0, computations will get better but until a certain point.
+
+    function $y=e^{x}$
+
+4.  Does it matter which finite difference approximation you use for the derivative? For example, you could use the forward difference $\frac{f(x+\delta)-f(x)}{\delta}$, or the three-point centered difference $\frac{f(x+\delta)-f(x-\delta)}{2\delta}$.
+
+## The Report
+
+Your report should:
+
+-   Show the code for `D`\
+-   Show the code for Newton's method\
+-   Give illustrative examples of each of them\
+-   Check what Newton does to the cycling example from class (Figure 1.10 in the book)\
+-   Clearly explain your answer to questions #3 and #4 and use graphics as part of your explanation
+-   Be written in LaTeX (see below under grading)
+
+Upload one .pdf file per group to Moodle.
+
+\
+
+## Grading Rubric
+
+Here is how the points will be divided for this report:
+
+-   2 points simply for using LaTeX. Thus if you use something else, you can get a maximum of 23 points.
+
+-   5 points for your writing: complete sentences, good punctuation, clear concise exposition, good organization, complying with page limit.\
+
+-   5 points for your examples: clearly and effectively illustrating how the methods work.\
+
+-   5 points for good graphics that tell a story, have properly labeled axes, are referred to and explained in the text, etc.
+
+-   8 points for your analyses and insights.
+
+-   After completing the report, you should complete the Technical Report Reflection Form. Not doing so will result in an (individual) loss of points on the report.
